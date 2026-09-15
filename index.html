@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Ascensore Spaziale delle Equivalenze</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    color: #e8eef7;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  /* stelle di sfondo */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 60% 70%, #fff, transparent),
+      radial-gradient(1px 1px at 80% 20%, #fff, transparent),
+      radial-gradient(2px 2px at 40% 80%, #fff, transparent),
+      radial-gradient(1px 1px at 10% 60%, #fff, transparent),
+      radial-gradient(1px 1px at 90% 50%, #fff, transparent);
+    background-size: 200% 200%;
+    animation: twinkle 6s infinite alternate;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @keyframes twinkle {
+    from { opacity: 0.4; }
+    to { opacity: 1; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 900px;
+    background: rgba(20, 30, 50, 0.75);
+    border: 1px solid rgba(120, 180, 255, 0.3);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 0 40px rgba(80, 150, 255, 0.2), inset 0 0 30px rgba(80, 150, 255, 0.05);
+    backdrop-filter: blur(6px);
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 5px;
+    background: linear-gradient(90deg, #6ec6ff, #b388ff, #ff8ac0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #9ab0cc;
+    margin-bottom: 20px;
+  }
+
+  /* --- SELEZIONE GRANDEZZA --- */
+  .category-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .category-bar button {
+    padding: 8px 16px;
+    border-radius: 30px;
+    border: 1px solid rgba(120, 180, 255, 0.4);
+    background: rgba(30, 45, 70, 0.8);
+    color: #cfe2ff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.25s;
+  }
+  .category-bar button:hover {
+    background: rgba(60, 100, 160, 0.8);
+    transform: translateY(-2px);
+  }
+  .category-bar button.active {
+    background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+    color: #fff;
+    border-color: #6ec6ff;
+    box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+  }
+
+  /* --- VISUALIZZAZIONE ASCENSORE --- */
+  .simulator {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  /* Ascensore: colonna dei piani */
+  .elevator-shaft {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(180deg, rgba(10,20,40,0.9), rgba(10,20,40,0.5));
+    border: 2px solid rgba(120, 180, 255, 0.4);
+    border-radius: 15px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 420px;
+  }
+
+  .floor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(30, 45, 70, 0.6);
+    border: 1px solid rgba(90, 130, 200, 0.2);
+    transition: all 0.3s;
+    cursor: pointer;
+    font-size: 0.9rem;
+    position: relative;
+  }
+  .floor:hover {
+    background: rgba(60, 100, 160, 0.6);
+  }
+  .floor.active {
+    background: linear-gradient(90deg, rgba(58,123,213,0.7), rgba(0,210,255,0.3));
+    border-color: #6ec6ff;
+    box-shadow: 0 0 12px rgba(110, 198, 255, 0.5);
+  }
+  .floor .unit-name {
+    font-weight: 600;
+    color: #cfe2ff;
+  }
+  .floor .unit-symbol {
+    font-size: 0.75rem;
+    color: #8aa8cc;
+    margin-left: 8px;
+  }
+  .floor .exp {
+    font-size: 0.75rem;
+    color: #ffb86c;
+    font-family: monospace;
+  }
+
+  /* Cabina ascensore animata */
+  .cabin-track {
+    position: relative;
+    width: 70px;
+    background: rgba(10, 20, 40, 0.7);
+    border: 2px solid rgba(120, 180, 255, 0.4);
+    border-radius: 15px;
+    overflow: hidden;
+  }
+  .cabin {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #ffd54f, #ff8f00);
+    box-shadow: 0 0 20px rgba(255, 200, 60, 0.7), inset 0 0 10px rgba(255,255,255,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    transition: top 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
+    z-index: 2;
+  }
+
+  /* --- PANNELLO CONTROLLI --- */
+  .controls {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .value-box {
+    background: rgba(20, 30, 50, 0.8);
+    border: 1px solid rgba(120, 180, 255, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+  }
+  .value-box label {
+    display: block;
+    font-size: 0.8rem;
+    color: #9ab0cc;
+    margin-bottom: 8px;
+  }
+  .value-input {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .value-input input {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(120, 180, 255, 0.4);
+    background: rgba(10, 20, 40, 0.9);
+    color: #fff;
+    font-family: monospace;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .value-input input:focus {
+    border-color: #6ec6ff;
+    box-shadow: 0 0 10px rgba(110, 198, 255, 0.4);
+  }
+  .value-input .from-unit {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #6ec6ff;
+    min-width: 45px;
+    text-align: center;
+    background: rgba(110, 198, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  /* Riga operazione matematica */
+  .operation {
+    background: rgba(20, 30, 50, 0.8);
+    border: 1px solid rgba(120, 180, 255, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+  }
+  .operation .title {
+    font-size: 0.8rem;
+    color: #9ab0cc;
+    margin-bottom: 8px;
+  }
+  .operation .formula {
+    font-size: 1.3rem;
+    font-family: monospace;
+    color: #ffd54f;
+    word-break: break-all;
+  }
+  .operation .arrow {
+    color: #6ec6ff;
+    font-size: 1.5rem;
+    margin: 5px 0;
+  }
+  .operation .result {
+    font-size: 1.4rem;
+    font-family: monospace;
+    color: #6effa0;
+    font-weight: bold;
+  }
+
+  .info-note {
+    font-size: 0.8rem;
+    color: #9ab0cc;
+    text-align: center;
+    padding: 10px;
+    background: rgba(110, 198, 255, 0.05);
+    border-radius: 10px;
+    border-left: 3px solid #6ec6ff;
+    text-align: left;
+    line-height: 1.5;
+  }
+
+  .quiz-btn {
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .quiz-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 210, 255, 0.5);
+  }
+
+  /* Quiz modal */
+  .quiz-panel {
+    display: none;
+    background: rgba(20, 30, 50, 0.95);
+    border: 1px solid rgba(120, 180, 255, 0.4);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 15px;
+  }
+  .quiz-panel.active {
+    display: block;
+  }
+  .quiz-question {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    color: #cfe2ff;
+  }
+  .quiz-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .quiz-options button {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(120, 180, 255, 0.4);
+    background: rgba(30, 45, 70, 0.8);
+    color: #cfe2ff;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: monospace;
+  }
+  .quiz-options button:hover {
+    background: rgba(60, 100, 160, 0.8);
+  }
+  .quiz-options button.correct {
+    background: linear-gradient(90deg, #2e7d32, #4caf50) !important;
+    border-color: #6effa0;
+  }
+  .quiz-options button.wrong {
+    background: linear-gradient(90deg, #b71c1c, #e53935) !important;
+    border-color: #ff6b6b;
+  }
+  .quiz-feedback {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 1rem;
+    min-height: 24px;
+  }
+
+  @media (max-width: 700px) {
+    .simulator { flex-direction: column; }
+    .cabin-track { height: 40px; width: 100%; }
+    .cabin { top: 5px !important; left: auto; right: 5px; transform: none; }
+    .quiz-options { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🚀 Ascensore Spaziale delle Equivalenze</h1>
+  <p class="subtitle">Sali e scendi tra i piani delle unità di misura: ogni piano è una potenza di 10!</p>
+
+  <!-- Selezione categoria -->
+  <div class="category-bar" id="categoryBar"></div>
+
+  <div class="simulator">
+    <!-- Colonna piani -->
+    <div class="elevator-shaft" id="elevatorShaft"></div>
+
+    <!-- Cabina -->
+    <div class="cabin-track">
+      <div class="cabin" id="cabin">🚀</div>
+    </div>
+
+    <!-- Controlli -->
+    <div class="controls">
+      <div class="value-box">
+        <label>Valore di partenza</label>
+        <div class="value-input">
+          <input type="number" id="inputValue" value="1" step="any">
+          <span class="from-unit" id="fromUnit">m</span>
+        </div>
+      </div>
+
+      <div class="operation" id="operationBox">
+        <div class="title">Operazione sull'ascensore</div>
+        <div class="formula" id="formula">—</div>
+        <div class="arrow" id="arrow">⬇️</div>
+        <div class="result" id="result">—</div>
+      </div>
+
+      <div class="info-note" id="infoNote">
+        💡 <b>Regola d'oro:</b> scendendo (verso unità più piccole) si <b>moltiplica</b> per 10 ad ogni piano. Salendo (verso unità più grandi) si <b>divide</b> per 10 ad ogni piano.
+      </div>
+
+      <button class="quiz-btn" id="quizBtn">🎯 Mettiti alla prova!</button>
+
+      <div class="quiz-panel" id="quizPanel">
+        <div class="quiz-question" id="quizQuestion">...</div>
+        <div class="quiz-options" id="quizOptions"></div>
+        <div class="quiz-feedback" id="quizFeedback"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURAZIONE DELLE GRANDEZZE
+   Ogni grandezza è una lista ordinata dal più grande al più piccolo.
+   Ogni piano è una potenza di 10 rispetto al precedente.
+   ============================================================ */
+const CATEGORIES = {
+  lunghezza: {
+    name: '📏 Lunghezza',
+    base: 'm',
+    units: [
+      { sym: 'km',  name: 'chilometro',  exp: '10³' },
+      { sym: 'hm',  name: 'ettometro',   exp: '10²' },
+      { sym: 'dam', name: 'decametro',   exp: '10¹' },
+      { sym: 'm',   name: 'metro',       exp: '10⁰' },
+      { sym: 'dm',  name: 'decimetro',   exp: '10⁻¹' },
+      { sym: 'cm',  name: 'centimetro',  exp: '10⁻²' },
+      { sym: 'mm',  name: 'millimetro',  exp: '10⁻³' },
+    ]
+  },
+  massa: {
+    name: '⚖️ Massa',
+    base: 'g',
+    units: [
+      { sym: 'kg',  name: 'chilogrammo', exp: '10³' },
+      { sym: 'hg',  name: 'ettogrammo',  exp: '10²' },
+      { sym: 'dag', name: 'decagrammo',  exp: '10¹' },
+      { sym: 'g',   name: 'grammo',      exp: '10⁰' },
+      { sym: 'dg',  name: 'decigrammo',  exp: '10⁻¹' },
+      { sym: 'cg',  name: 'centigrammo', exp: '10⁻²' },
+      { sym: 'mg',  name: 'milligrammo', exp: '10⁻³' },
+    ]
+  },
+  capacita: {
+    name: '🧪 Capacità',
+    base: 'L',
+    units: [
+      { sym: 'kL',  name: 'chilolitro',  exp: '10³' },
+      { sym: 'hL',  name: 'ettolitro',   exp: '10²' },
+      { sym: 'daL', name: 'decalitro',   exp: '10¹' },
+      { sym: 'L',   name: 'litro',       exp: '10⁰' },
+      { sym: 'dL',  name: 'decilitro',   exp: '10⁻¹' },
+      { sym: 'cL',  name: 'centilitro',  exp: '10⁻²' },
+      { sym: 'mL',  name: 'millilitro',  exp: '10⁻³' },
+    ]
+  }
+};
+
+/* ============================================================
+   STATO
+   ============================================================ */
+let state = {
+  category: 'lunghezza',
+  fromIndex: 3,     // indice del piano di partenza (m)
+  toIndex: 3,       // indice del piano di arrivo
+  value: 1,
+};
+
+/* ============================================================
+   RIFERIMENTI DOM
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const categoryBar = $('categoryBar');
+const elevatorShaft = $('elevatorShaft');
+const cabin = $('cabin');
+const inputValue = $('inputValue');
+const fromUnit = $('fromUnit');
+const formulaEl = $('formula');
+const resultEl = $('result');
+const arrowEl = $('arrow');
+const quizBtn = $('quizBtn');
+const quizPanel = $('quizPanel');
+const quizQuestion = $('quizQuestion');
+const quizOptions = $('quizOptions');
+const quizFeedback = $('quizFeedback');
+
+/* ============================================================
+   FUNZIONI
+   ============================================================ */
+
+function getCategory() {
+  return CATEGORIES[state.category];
+}
+
+function getUnits() {
+  return getCategory().units;
+}
+
+/** Ricostruisce i pulsanti delle categorie */
+function renderCategoryBar() {
+  categoryBar.innerHTML = '';
+  for (const key in CATEGORIES) {
+    const btn = document.createElement('button');
+    btn.textContent = CATEGORIES[key].name;
+    btn.className = key === state.category ? 'active' : '';
+    btn.onclick = () => {
+      state.category = key;
+      state.fromIndex = 3; // base (indice 3 = unità base in tutte le categorie)
+      state.toIndex = 3;
+      renderCategoryBar();
+      renderShaft();
+      updateConversion();
+      resetQuiz();
+    };
+    categoryBar.appendChild(btn);
+  }
+}
+
+/** Ricostruisce la colonna dei piani */
+function renderShaft() {
+  const units = getUnits();
+  elevatorShaft.innerHTML = '';
+  units.forEach((u, i) => {
+    const floor = document.createElement('div');
+    floor.className = 'floor';
+    floor.dataset.index = i;
+    floor.innerHTML = `
+      <div>
+        <span class="unit-name">${u.name}</span>
+        <span class="unit-symbol">(${u.sym})</span>
+      </div>
+      <div class="exp">${u.exp}</div>
+    `;
+    // Click su un piano: se è il primo click imposta partenza, se secondo imposta arrivo
+    floor.onclick = () => handleFloorClick(i);
+    elevatorShaft.appendChild(floor);
+  });
+}
+
+/** Gestisce il click su un piano */
+function handleFloorClick(index) {
+  // Se clicco sul piano già di partenza, non faccio nulla di particolare
+  // Logica semplice: primo click cambia partenza, secondo cambia arrivo? 
+  // Meglio: click su un piano = imposta ARRIVO, ma se tengo premuto shift = PARTENZA.
+  // Soluzione più intuitiva: due click distinti con pulsanti dedicati.
+  // Uso: click singolo = sposta l'ascensore (arrivo). Per la partenza, uso l'input sopra.
+  state.toIndex = index;
+  updateConversion();
+}
+
+/** Aggiorna colori, cabina, formula e risultato */
+function updateConversion() {
+  const units = getUnits();
+  const from = units[state.fromIndex];
+  const to = units[state.toIndex];
+
+  // Colora i piani
+  document.querySelectorAll('.floor').forEach((el, i) => {
+    el.classList.toggle('active', i === state.fromIndex || i === state.toIndex);
+    // Evidenzia la partenza vs arrivo con un bordo diverso
+    if (i === state.fromIndex) el.style.borderLeft = '4px solid #ffd54f';
+    else if (i === state.toIndex) el.style.borderLeft = '4px solid #6effa0';
+    else el.style.borderLeft = '';
+  });
+
+  // Posiziona la cabina
+  const totalFloors = units.length;
+  const floorHeight = 100 / totalFloors;
+  // posizione dall'alto: piano 0 in alto
+  const topPercent = state.toIndex * floorHeight + (floorHeight - 50/totalFloors)/2;
+  // conversione in pixel: altezza shaft - padding - altezza cabina
+  const shaftHeight = elevatorShaft.clientHeight;
+  const cabinTop = (state.toIndex / (totalFloors - 1)) * (shaftHeight - 60) + 5;
+  cabin.style.top = cabinTop + 'px';
+
+  // Calcolo matematico
+  const distance = state.toIndex - state.fromIndex;
+  const value = parseFloat(inputValue.value) || 0;
+  let result;
+  let formula;
+
+  if (distance === 0) {
+    result = value;
+    formula = `${value} ${from.sym} = ${value} ${to.sym}`;
+    arrowEl.textContent = '⏸️';
+  } else if (distance > 0) {
+    // Scendiamo: moltiplichiamo per 10^distance
+    const factor = Math.pow(10, distance);
+    result = value * factor;
+    formula = `${value} ${from.sym} × 10^${distance}`;
+    arrowEl.textContent = '⬇️ ×10^' + distance;
+  } else {
+    // Saliamo: dividiamo
+    const d = -distance;
+    const factor = Math.pow(10, d);
+    result = value / factor;
+    formula = `${value} ${from.sym} ÷ 10^${d}`;
+    arrowEl.textContent = '⬆️ ÷10^' + d;
+  }
+
+  formulaEl.textContent = formula;
+  resultEl.textContent = `= ${formatNumber(result)} ${to.sym}`;
+  fromUnit.textContent = from.sym;
+}
+
+function formatNumber(n) {
+  if (!isFinite(n)) return '∞';
+  // Se è un intero "pulito" lo mostro senza decimali
+  if (Number.isInteger(n) && Math.abs(n) < 1e15) return n.toString();
+  // Altrimenti uso un massimo di 10 cifre significative, rimuovendo zeri finali
+  let s = n.toPrecision(10);
+  if (s.includes('.')) s = s.replace(/\.?0+$/, '');
+  // Se contiene e, uso notazione esponenziale pulita
+  return s;
+}
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+function resetQuiz() {
+  quizPanel.classList.remove('active');
+  quizFeedback.textContent = '';
+}
+
+function startQuiz() {
+  quizPanel.classList.add('active');
+  quizFeedback.textContent = '';
+  const units = getUnits();
+  // Genera una domanda casuale: da unità A a unità B con un valore semplice
+  const fromIdx = Math.floor(Math.random() * units.length);
+  let toIdx = Math.floor(Math.random() * units.length);
+  while (toIdx === fromIdx) toIdx = Math.floor(Math.random() * units.length);
+
+  const from = units[fromIdx];
+  const to = units[toIdx];
+  const value = [1, 2, 5, 10, 0.5, 100][Math.floor(Math.random() * 6)];
+
+  // Calcolo risposta corretta
+  const distance = toIdx - fromIdx;
+  const correct = distance > 0 ? value * Math.pow(10, distance) : value / Math.pow(10, -distance);
+
+  quizQuestion.innerHTML = `Quanto vale <b>${value} ${from.sym}</b> in <b>${to.sym}</b>?`;
+
+  // Genera 3 risposte sbagliate plausibili
+  const options = new Set();
+  options.add(formatNumber(correct));
+  // Sbagliate: potenze di 10 vicine
+  const wrongCandidates = [
+    correct * 10, correct / 10, correct * 100, correct / 100,
+    correct * 1000, correct / 1000
+  ].filter(x => isFinite(x) && x > 0 && x !== correct);
+
+  // Mescola e prendi 3
+  wrongCandidates.sort(() => Math.random() - 0.5);
+  for (const w of wrongCandidates) {
+    if (options.size >= 4) break;
+    options.add(formatNumber(w));
+  }
+
+  // Se non ho abbastanza opzioni, aggiungo numeri generici
+  let extra = 1;
+  while (options.size < 4) {
+    options.add(formatNumber(correct * Math.pow(10, extra)));
+    extra++;
+  }
+
+  const optionsArray = Array.from(options).sort(() => Math.random() - 0.5);
+
+  quizOptions.innerHTML = '';
+  optionsArray.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.textContent = opt + ' ' + to.sym;
+    btn.onclick = () => checkAnswer(btn, opt, formatNumber(correct), to.sym);
+    quizOptions.appendChild(btn);
+  });
+}
+
+function checkAnswer(btn, chosen, correct, unitSym) {
+  // Disabilita tutti i bottoni
+  document.querySelectorAll('.quiz-options button').forEach(b => b.disabled = true);
+
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    quizFeedback.innerHTML = '✅ <span style="color:#6effa0">Perfetto! Risposta corretta.</span>';
+  } else {
+    btn.classList.add('wrong');
+    // evidenzia la corretta
+    document.querySelectorAll('.quiz-options button').forEach(b => {
+      if (b.textContent === correct + ' ' + unitSym) b.classList.add('correct');
+    });
+    quizFeedback.innerHTML = `❌ <span style="color:#ff8a80">Ops! La risposta corretta era <b>${correct} ${unitSym}</b>.</span>`;
+  }
+}
+
+/* ============================================================
+   EVENTI
+   ============================================================ */
+inputValue.addEventListener('input', updateConversion);
+
+// Click sulla cabina o sui piani come detto
+// Aggiungo pulsanti per scegliere partenza/arrivo in modo esplicito sotto la shaft? 
+// Semplifico: click su un piano imposta ARRIVO. Per cambiare partenza uso l'input? 
+// Meglio: doppio click su un piano imposta PARTENZA.
+document.addEventListener('dblclick', (e) => {
+  const floor = e.target.closest('.floor');
+  if (floor) {
+    state.fromIndex = parseInt(floor.dataset.index);
+    updateConversion();
+  }
+});
+
+// Istruzioni per l'utente
+const infoNote = $('infoNote');
+infoNote.innerHTML = `
+  💡 <b>Come si usa:</b><br>
+  • <b>Click singolo</b> su un piano = l'ascensore ci sale (destinazione).<br>
+  • <b>Doppio click</b> su un piano = imposta il piano di <b>partenza</b> (bordo giallo).<br>
+  • Il bordo verde indica la <b>destinazione</b>.<br>
+  • Modifica il valore in alto per vedere la conversione aggiornata.<br>
+  • <b>Regola:</b> scendendo (verso unità più piccole) si <b>moltiplica</b> per 10 ad ogni piano; salendo si <b>divide</b> per 10.
+`;
+
+quizBtn.onclick = startQuiz;
+
+/* ============================================================
+   INIZIALIZZAZIONE
+   ============================================================ */
+function init() {
+  renderCategoryBar();
+  renderShaft();
+  updateConversion();
+}
+
+// aspetto che il layout sia pronto per calcolare l'altezza della shaft
+window.addEventListener('load', () => {
+  init();
+  // ricalcolo dopo un attimo per sicurezza
+  setTimeout(updateConversion, 100);
+});
+
+window.addEventListener('resize', updateConversion);
+</script>
+</body>
+</html>
